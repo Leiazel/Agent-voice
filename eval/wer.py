@@ -29,3 +29,4 @@ def compute_wer(reference: str, hypothesis: str) -> float:
                 )
 
     return round(dp[n][m] / n, 4)
+
