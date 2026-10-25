@@ -77,6 +77,10 @@ def test_agent_completa_reserva() -> None:
 def test_agent_completa_cancelacion() -> None:
     agent = VoiceReservationAgent(llm=MockLLM())
     
+    # Crear primero una reserva para tener un ID válido
+    agent.process_user_message("Confirmo la reserva para 2 personas a las 20:30 a nombre de Juan Perez")
+
+    # Cancelar la reserva creada
     resp = agent.process_user_message("Necesito cancelar mi reserva código RES-1001")
     assert len(agent.last_tool_executions) > 0
     assert agent.last_tool_executions[0].name == "tool_cancelar_reserva"
@@ -116,3 +120,4 @@ def test_gemini_provider_live_call() -> None:
     )
     assert resp.text
     assert "Trattoria" in resp.text
+

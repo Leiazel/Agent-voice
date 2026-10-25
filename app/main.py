@@ -1,16 +1,119 @@
-from fastapi import FastAPI
+import time
+from typing import Any, Optional
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+
+from app.agent.session import session_manager
 from app.config import settings
+from app.logging_config import audit_logger
 
 app = FastAPI(
     title="Restaurant Voice Agent",
-    description="Agente conversacional de voz para reservas gastronómicas",
+    description="Backend FastAPI para atención conversacional y reservas con IA",
     version="0.1.0",
 )
 
 
-@app.get("/health", tags=["Salud"])
-def health_check() -> dict[str, str]:
+class HealthResponse(BaseModel):
+    status: str
+    env: str
+    llm_provider: str
+    model: str
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, description="Mensaje del usuario")
+    session_id: Optional[str] = Field(default=None, description="Identificador único de la sesión (opcional)")
+
+
+class ToolExecutionDto(BaseModel):
+    name: str
+    args: dict[str, Any]
+    output: Any
+
+
+class ChatResponse(BaseModel):
+    session_id: str
+    response: str
+    tools_used: list[ToolExecutionDto] = Field(default_factory=list)
+    duration_ms: float
+
+
+class ResetSessionRequest(BaseModel):
+    session_id: str
+
+
+@app.get("/health", response_model=HealthResponse, tags=["Salud"])
+def health_check() -> HealthResponse:
+    """Verifica el estado del servicio y la configuración activa del LLM."""
+    model_name = (
+        settings.gemini_model if settings.llm_provider == "gemini" else settings.ollama_model
+    )
+    return HealthResponse(
+        status="ok",
+        env=settings.app_env,
+        llm_provider=settings.llm_provider,
+        model=model_name,
+    )
+
+
+@app.post("/chat", response_model=ChatResponse, tags=["Conversación"])
+def chat_endpoint(payload: ChatRequest) -> ChatResponse:
+    """Procesa un turno conversacional, ejecuta herramientas y registra tiempos y auditoría."""
+    start_time = time.perf_counter()
+
+    try:
+        session_id, agent = session_manager.get_or_create(payload.session_id)
+        agent_reply = agent.process_user_message(payload.message)
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+        # Mapeo de herramientas ejecutadas
+        tools_executed = [
+            ToolExecutionDto(name=te.name, args=te.args, output=te.output)
+            for te in agent.last_tool_executions
+        ]
+
+        # Logging estructurado por turno de conversación
+        audit_logger.info(
+            f"Conversación procesada [{session_id}] en {duration_ms} ms",
+            extra={
+                "session_id": session_id,
+                "user_message": payload.message,
+                "agent_response": agent_reply,
+                "tools_used": [te.model_dump() for te in tools_executed],
+                "duration_ms": duration_ms,
+            },
+        )
+
+        return ChatResponse(
+            session_id=session_id,
+            response=agent_reply,
+            tools_used=tools_executed,
+            duration_ms=duration_ms,
+        )
+
+    except Exception as exc:
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        audit_logger.error(
+            f"Error procesando conversación: {exc}",
+            extra={
+                "session_id": payload.session_id or "unknown",
+                "user_message": payload.message,
+                "error": str(exc),
+                "duration_ms": duration_ms,
+            },
+        )
+        raise HTTPException(
+            status_code=500,
+            detail="Error interno procesando la solicitud conversacional.",
+        )
+
+
+@app.post("/chat/reset", tags=["Conversación"])
+def reset_session(payload: ResetSessionRequest) -> dict[str, str]:
+    """Reinicia el estado y memoria de una conversación."""
+    removed = session_manager.remove(payload.session_id)
     return {
-        "status": "ok",
-        "env": settings.app_env,
+        "session_id": payload.session_id,
+        "status": "reset" if removed else "not_found",
     }

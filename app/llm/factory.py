@@ -2,6 +2,7 @@ from app.config import settings
 from app.llm.base import BaseLLM
 from app.llm.gemini import GeminiProvider
 from app.llm.mock import MockLLM
+from app.llm.openai_compatible import OpenAICompatibleProvider
 
 
 def get_llm_provider(provider_name: str | None = None) -> BaseLLM:
@@ -11,5 +12,8 @@ def get_llm_provider(provider_name: str | None = None) -> BaseLLM:
         return GeminiProvider()
     elif name == "mock":
         return MockLLM()
+    elif name in ("openai", "groq", "openrouter"):
+        return OpenAICompatibleProvider()
     else:
         raise ValueError(f"Proveedor de LLM no soportado o aún no implementado: '{name}'")
+

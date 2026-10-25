@@ -4,6 +4,7 @@ from app.llm.base import BaseLLM, LLMResponse, ToolExecution
 from app.llm.factory import get_llm_provider
 from app.llm.gemini import GeminiProvider
 from app.llm.mock import MockLLM
+from app.llm.openai_compatible import OpenAICompatibleProvider
 
 __all__ = [
     "BaseLLM",
@@ -12,4 +13,5 @@ __all__ = [
     "get_llm_provider",
     "GeminiProvider",
     "MockLLM",
+    "OpenAICompatibleProvider",
 ]

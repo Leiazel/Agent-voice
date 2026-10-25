@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     gemini_model: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL")
     ollama_base_url: str = Field(default="http://localhost:11434", alias="OLLAMA_BASE_URL")
     ollama_model: str = Field(default="qwen2.5:7b", alias="OLLAMA_MODEL")
+    openai_base_url: str = Field(default="https://api.groq.com/openai/v1", alias="OPENAI_BASE_URL")
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    openai_model: str = Field(default="llama-3.3-70b-versatile", alias="OPENAI_MODEL")
 
     # Pipeline de voz
     vad_provider: str = Field(default="silero", alias="VAD_PROVIDER")
