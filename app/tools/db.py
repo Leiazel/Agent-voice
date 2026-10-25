@@ -67,3 +67,4 @@ def init_db(db_path: Path | None = None) -> None:
                 "INSERT INTO mesas (numero, capacidad, ubicacion) VALUES (?, ?, ?);",
                 DEFAULT_TABLES
             )
+

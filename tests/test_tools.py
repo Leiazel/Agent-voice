@@ -352,3 +352,4 @@ def test_consultar_alergenos_insensible_mayusculas_tildes() -> None:
     res = consultar_alergenos("salmón", alergeno="pescado")
     assert res.encontrado is True
     assert res.estado == "contiene"
+

@@ -340,3 +340,4 @@ def cancelar_reserva(
             id_reserva=codigo,
             mensaje=f"La reserva '{codigo}' a nombre de {reserva['nombre']} ha sido cancelada exitosamente.",
         )
+

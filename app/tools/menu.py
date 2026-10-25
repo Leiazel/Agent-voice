@@ -123,3 +123,4 @@ def consultar_alergenos(
                 "No garantizamos la ausencia total de trazas; por favor confirme con el personal del restaurante."
             ),
         )
+

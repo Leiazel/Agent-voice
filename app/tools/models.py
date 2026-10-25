@@ -51,3 +51,4 @@ class ConsultarAlergenosOutput(BaseModel):
     alergeno_consultado: Optional[str] = Field(default=None, description="Alérgeno puntual por el que se preguntó")
     estado: str = Field(..., description="Estado del resultado: 'contiene', 'no_informado', 'plato_inexistente'")
     mensaje: str = Field(..., description="Respuesta clara que respeta el protocolo de seguridad de alérgenos")
+
