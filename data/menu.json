@@ -1,0 +1,102 @@
+{
+  "restaurante": "Trattoria Bella Vista",
+  "descripcion": "Cocina italiana artesanal y tradicional",
+  "platos": [
+    {
+      "id": "ent-1",
+      "nombre": "Bruschetta tradicional",
+      "categoria": "entradas",
+      "descripcion": "Pan de campo tostado con tomates confitados, albahaca fresca, ajo y aceite de oliva virgen extra.",
+      "precio": 4500,
+      "alergenos": ["gluten"]
+    },
+    {
+      "id": "ent-2",
+      "nombre": "Ensalada Caprese",
+      "categoria": "entradas",
+      "descripcion": "Tomates frescos, mozzarella de búfala, hojas de albahaca y reducción de aceto balsámico.",
+      "precio": 5200,
+      "alergenos": ["lacteos"]
+    },
+    {
+      "id": "ent-3",
+      "nombre": "Carpaccio de lomo",
+      "categoria": "entradas",
+      "descripcion": "Finas láminas de lomo vacuno con rúcula silvestre, alcaparras y láminas de parmesano.",
+      "precio": 6800,
+      "alergenos": ["lacteos"]
+    },
+    {
+      "id": "ent-4",
+      "nombre": "Sopa Minestrone",
+      "categoria": "entradas",
+      "descripcion": "Sopa tradicional de vegetales de estación y legumbres en caldo casero.",
+      "precio": 4200,
+      "alergenos": []
+    },
+    {
+      "id": "prin-1",
+      "nombre": "Risotto de hongos",
+      "categoria": "principales",
+      "descripcion": "Arroz carnaroli con mix de hongos silvestres, queso parmesano y manteca.",
+      "precio": 9500,
+      "alergenos": ["lacteos"]
+    },
+    {
+      "id": "prin-2",
+      "nombre": "Lasagna della Nonna",
+      "categoria": "principales",
+      "descripcion": "Pasta en capas con salsa bolognesa de cocción lenta, bechamel y queso gratinado.",
+      "precio": 9200,
+      "alergenos": ["gluten", "lacteos", "huevo"]
+    },
+    {
+      "id": "prin-3",
+      "nombre": "Ravioles de ricota y nuez",
+      "categoria": "principales",
+      "descripcion": "Pasta fresca rellena de ricota y nueces seleccionadas, servida con salsa de manteca y salvia.",
+      "precio": 8900,
+      "alergenos": ["gluten", "lacteos", "huevo", "frutos_secos"]
+    },
+    {
+      "id": "prin-4",
+      "nombre": "Salmón a la plancha",
+      "categoria": "principales",
+      "descripcion": "Filet de salmón rosado con espárragos salteados y emulsión de limón.",
+      "precio": 12500,
+      "alergenos": ["pescado"]
+    },
+    {
+      "id": "prin-5",
+      "nombre": "Bife de chorizo con papas rústicas",
+      "categoria": "principales",
+      "descripcion": "Corte premium a la parrilla servido con papas doradas al romero.",
+      "precio": 11800,
+      "alergenos": []
+    },
+    {
+      "id": "post-1",
+      "nombre": "Tiramisú clásico",
+      "categoria": "postres",
+      "descripcion": "Capas de vainillas embebidas en café espresso y crema de mascarpone con cacao amargo.",
+      "precio": 4200,
+      "alergenos": ["gluten", "lacteos", "huevo"]
+    },
+    {
+      "id": "post-2",
+      "nombre": "Panna Cotta",
+      "categoria": "postres",
+      "descripcion": "Postre de crema cocida con coulis artesanal de frutos rojos.",
+      "precio": 3800,
+      "alergenos": ["lacteos"]
+    },
+    {
+      "id": "post-3",
+      "nombre": "Gelato de pistacho",
+      "categoria": "postres",
+      "descripcion": "Helado artesanal de pistacho siciliano con trozos tostados.",
+      "precio": 3900,
+      "alergenos": ["lacteos", "frutos_secos"]
+    }
+  ]
+}
