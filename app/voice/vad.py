@@ -34,3 +34,4 @@ class SileroVoiceDetector:
     def is_speech(self, pcm_chunk: bytes) -> bool:
         """Determina si un fragmento de audio supera el umbral de voz humana."""
         return self.voice_confidence(pcm_chunk) >= self.confidence_threshold
+

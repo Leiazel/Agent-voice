@@ -47,3 +47,4 @@ class LocalTTSService:
             return wav_io.getvalue()
 
         return None
+

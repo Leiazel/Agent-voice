@@ -64,3 +64,4 @@ class FasterWhisperSTT:
             wav_file.setframerate(sample_rate)
             wav_file.writeframes(pcm_bytes)
         return wav_io.getvalue()
+
