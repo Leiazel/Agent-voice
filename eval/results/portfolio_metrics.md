@@ -58,3 +58,4 @@ Código abierto, arquitectura reproducible y documentación completa en GitHub: 
 | **Latencia Total Pipeline Local**| **24.09 ms** (p50) | < 150.0 ms | ✅ Excedido |
 | **Tasa de Error STT (WER)** | **10.91%** | < 15.0% | ✅ Cumplido |
 | **Cobertura de Tests** | **74 tests** (100% negocio) | >= 80% | ✅ Cumplido |
+
