@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trattoria Bella Vista - Agente de Voz</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --blue: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; }
+    header { background-color: var(--card); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    h1 { font-size: 1.25rem; font-weight: 700; color: var(--text); }
+    .status-badge { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; background: #0f172a; border: 1px solid var(--border); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+    .dot.listening { background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 1.5s infinite; }
+    .dot.thinking { background: var(--yellow); box-shadow: 0 0 10px var(--yellow); animation: pulse 1s infinite; }
+    .dot.speaking { background: var(--blue); box-shadow: 0 0 10px var(--blue); animation: pulse 1s infinite; }
+    .dot.disconnected { background: var(--muted); }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.2); } }
+    
+    main { flex: 1; display: flex; flex-direction: column; max-width: 800px; width: 100%; margin: 0 auto; padding: 1.5rem; overflow: hidden; }
+    .transcript-box { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; }
+    .message { max-width: 80%; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.95rem; line-height: 1.4; }
+    .message.user { align-self: flex-end; background: #0369a1; color: #fff; border-bottom-right-radius: 2px; }
+    .message.assistant { align-self: flex-start; background: #334155; color: #f8fafc; border-bottom-left-radius: 2px; }
+    .tool-tag { align-self: center; background: #1e1b4b; border: 1px solid #4338ca; color: #a5b4fc; font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 6px; font-family: monospace; }
+    
+    .metrics-bar { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem; padding: 0 0.5rem; }
+    
+    .controls { display: flex; gap: 0.75rem; margin-top: 1rem; }
+    .call-btn { flex: 1; padding: 1rem; font-size: 1.1rem; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: background 0.2s; }
+    .call-btn.start { background: var(--green); color: #000; }
+    .call-btn.start:hover { background: #16a34a; }
+    .call-btn.stop { background: var(--red); color: #fff; }
+    .call-btn.stop:hover { background: #dc2626; }
+    
+    .input-box { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+    .input-box input { flex: 1; padding: 0.75rem 1rem; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.9rem; }
+    .input-box button { padding: 0 1.25rem; background: var(--accent); color: #000; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🍕 Trattoria Bella Vista - Asistente de Voz</h1>
+    <div class="status-badge">
+      <div id="statusDot" class="dot disconnected"></div>
+      <span id="statusText">Desconectado</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="transcript-box" id="transcriptBox">
+      <div class="message assistant">
+        Presiona <strong>"Iniciar Llamada"</strong> para comenzar a hablar con el asistente de reservas.
+      </div>
+    </div>
+
+    <div class="metrics-bar" id="metricsBar">
+      <span>Latencia STT: -</span>
+      <span>LLM: -</span>
+      <span>TTS: -</span>
+      <span>Total: -</span>
+    </div>
+
+    <div class="controls">
+      <button id="callBtn" class="call-btn start" onclick="toggleCall()">
+        <span id="btnIcon">📞</span>
+        <span id="btnText">Iniciar Llamada</span>
+      </button>
+    </div>
+
+    <div class="input-box">
+      <input type="text" id="textInput" placeholder="O escribe un mensaje aquí..." onkeypress="if(event.key==='Enter') sendTextMessage()">
+      <button onclick="sendTextMessage()">Enviar</button>
+    </div>
+  </main>
+
+  <script>
+    let ws = null;
+    let audioContext = null;
+    let mediaStream = null;
+    let processor = null;
+    let isConnected = false;
+    let currentAudioSource = null;
+
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const callBtn = document.getElementById('callBtn');
+    const btnText = document.getElementById('btnText');
+    const btnIcon = document.getElementById('btnIcon');
+    const transcriptBox = document.getElementById('transcriptBox');
+    const metricsBar = document.getElementById('metricsBar');
+    const textInput = document.getElementById('textInput');
+
+    function updateStatus(state) {
+      statusDot.className = 'dot ' + state;
+      const labels = {
+        disconnected: 'Desconectado',
+        ready: 'Listo para hablar',
+        listening: 'Escuchando...',
+        thinking: 'Pensando...',
+        speaking: 'Hablando...'
+      };
+      statusText.innerText = labels[state] || state;
+    }
+
+    function appendMessage(role, text) {
+      const msg = document.createElement('div');
+      msg.className = 'message ' + role;
+      msg.innerText = text;
+      transcriptBox.appendChild(msg);
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    }
+
+    function appendToolTag(name, args) {
+      const tag = document.createElement('div');
+      tag.className = 'tool-tag';
+      tag.innerText = `⚙️ ${name} (${JSON.stringify(args)})`;
+      transcriptBox.appendChild(tag);
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    }
+
+    function stopPlayback() {
+      if (currentAudioSource) {
+        try { currentAudioSource.stop(); } catch(e){}
+        currentAudioSource = null;
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    async function toggleCall() {
+      if (isConnected) {
+        disconnect();
+      } else {
+        await connect();
+      }
+    }
+
+    async function connect() {
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/voice`;
+        ws = new WebSocket(wsUrl);
+        ws.binaryType = 'arraybuffer';
+
+        ws.onopen = async () => {
+          isConnected = true;
+          callBtn.className = 'call-btn stop';
+          btnIcon.innerText = '🔴';
+          btnText.innerText = 'Colgar / Finalizar';
+          updateStatus('ready');
+          await startAudioCapture();
+        };
+
+        ws.onmessage = async (event) => {
+          if (typeof event.data === 'string') {
+            const data = JSON.parse(event.data);
+            handleServerMessage(data);
+          }
+        };
+
+        ws.onclose = () => {
+          disconnect();
+        };
+
+        ws.onerror = (err) => {
+          console.error("WS error:", err);
+          disconnect();
+        };
+      } catch (err) {
+        alert("Error al conectar: " + err);
+        disconnect();
+      }
+    }
+
+    function disconnect() {
+      isConnected = false;
+      stopPlayback();
+      if (ws) {
+        try { ws.close(); } catch(e){}
+        ws = null;
+      }
+      stopAudioCapture();
+      callBtn.className = 'call-btn start';
+      btnIcon.innerText = '📞';
+      btnText.innerText = 'Iniciar Llamada';
+      updateStatus('disconnected');
+    }
+
+    async function startAudioCapture() {
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1 } });
+      audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      const source = audioContext.createMediaStreamSource(mediaStream);
+
+      // Buffer de procesamiento para capturar PCM 16-bit
+      processor = audioContext.createScriptProcessor(2048, 1, 1);
+      processor.onaudioprocess = (e) => {
+        if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN) return;
+        const inputData = e.inputBuffer.getChannelData(0);
+        // Convertir float32 (-1.0 a 1.0) a Int16 PCM
+        const pcm16 = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          const s = Math.max(-1, Math.min(1, inputData[i]));
+          pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        ws.send(pcm16.buffer);
+      };
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+    }
+
+    function stopAudioCapture() {
+      if (processor) { processor.disconnect(); processor = null; }
+      if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+      if (audioContext && audioContext.state !== 'closed') { audioContext.close(); audioContext = null; }
+    }
+
+    function handleServerMessage(data) {
+      switch (data.type) {
+        case 'status':
+          updateStatus(data.state);
+          break;
+        case 'transcript':
+          appendMessage(data.role, data.text);
+          break;
+        case 'tool_executed':
+          appendToolTag(data.name, data.args);
+          break;
+        case 'interruption':
+          stopPlayback();
+          updateStatus('listening');
+          break;
+        case 'metrics':
+          if (data.data) {
+            metricsBar.innerHTML = `
+              <span>Latencia STT: <strong>${data.data.stt_ms}ms</strong></span>
+              <span>LLM: <strong>${data.data.llm_ms}ms</strong></span>
+              <span>TTS: <strong>${data.data.tts_ms}ms</strong></span>
+              <span>Total: <strong>${data.data.total_ms}ms</strong></span>
+            `;
+          }
+          break;
+        case 'audio':
+          playAudioBase64(data.data);
+          break;
+        case 'speech':
+          speakNative(data.text);
+          break;
+      }
+    }
+
+    function playAudioBase64(b64) {
+      stopPlayback();
+      updateStatus('speaking');
+      const binaryString = atob(b64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
+
+      const ctx = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+      ctx.decodeAudioData(bytes.buffer, (buffer) => {
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        currentAudioSource = source;
+        source.onended = () => {
+          currentAudioSource = null;
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'bot_playback_finished' }));
+          }
+        };
+        source.start(0);
+      });
+    }
+
+    function speakNative(text) {
+      stopPlayback();
+      updateStatus('speaking');
+      if (!('speechSynthesis' in window)) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'es-ES';
+      utterance.rate = 1.05;
+      utterance.onend = () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'bot_playback_finished' }));
+        }
+      };
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function sendTextMessage() {
+      const text = textInput.value.trim();
+      if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+      textInput.value = '';
+      ws.send(JSON.stringify({ type: 'text_input', text: text }));
+    }
+  </script>
+</body>
+</html>

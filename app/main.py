@@ -1,11 +1,15 @@
 import time
+import uuid
+from pathlib import Path
 from typing import Any, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from app.agent.session import session_manager
 from app.config import settings
 from app.logging_config import audit_logger
+from app.voice.pipeline import VoiceSession
 
 app = FastAPI(
     title="Restaurant Voice Agent",
@@ -41,6 +45,23 @@ class ChatResponse(BaseModel):
 
 class ResetSessionRequest(BaseModel):
     session_id: str
+
+
+@app.get("/", response_class=HTMLResponse, tags=["UI"])
+def index() -> HTMLResponse:
+    """Sirve la interfaz web para interactuar con el agente por voz."""
+    template_path = Path(__file__).parent / "templates" / "index.html"
+    if not template_path.exists():
+        return HTMLResponse("<h1>Trattoria Bella Vista - Interfaz no encontrada</h1>", status_code=404)
+    return HTMLResponse(template_path.read_text(encoding="utf-8"))
+
+
+@app.websocket("/ws/voice")
+async def voice_websocket_endpoint(websocket: WebSocket) -> None:
+    """Endpoint WebSocket para streaming de voz bidireccional y barge-in."""
+    session_id = str(uuid.uuid4())
+    session = VoiceSession(websocket=websocket, session_id=session_id)
+    await session.run()
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Salud"])
