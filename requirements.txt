@@ -4,6 +4,7 @@ uvicorn[standard]>=0.28.0
 pydantic>=2.6.0
 pydantic-settings>=2.2.0
 python-dotenv>=1.0.0
+google-genai>=2.0.0
 
 # Development & Testing
 pytest>=8.0.0
