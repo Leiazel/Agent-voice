@@ -6,6 +6,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 
 from app.agent.core import VoiceReservationAgent
 from app.logging_config import audit_logger
+from app.voice.metrics import latency_collector
 from app.voice.stt import FasterWhisperSTT
 from app.voice.tts import LocalTTSService
 from app.voice.vad import SileroVoiceDetector
@@ -161,6 +162,13 @@ class VoiceSession:
             "tts_ms": tts_ms,
             "total_ms": total_ms,
         }
+        latency_collector.record_turn(
+            session_id=self.session_id,
+            stt_ms=stt_ms,
+            llm_ms=llm_ms,
+            tts_ms=tts_ms,
+            total_ms=total_ms,
+        )
         await self._send_json({"type": "metrics", "data": metrics})
 
         audit_logger.info(

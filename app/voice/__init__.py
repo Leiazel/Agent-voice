@@ -1,5 +1,6 @@
 """Módulo de procesamiento de voz (VAD, STT, TTS y pipeline en tiempo real)."""
 
+from app.voice.metrics import LatencyMetricsCollector, latency_collector
 from app.voice.pipeline import VoiceSession
 from app.voice.stt import FasterWhisperSTT
 from app.voice.tts import LocalTTSService
@@ -10,4 +11,6 @@ __all__ = [
     "FasterWhisperSTT",
     "SileroVoiceDetector",
     "LocalTTSService",
+    "LatencyMetricsCollector",
+    "latency_collector",
 ]

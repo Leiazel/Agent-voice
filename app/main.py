@@ -1,20 +1,35 @@
 import time
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, AsyncGenerator, Optional
 from fastapi import FastAPI, HTTPException, WebSocket
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from app.agent.session import session_manager
 from app.config import settings
 from app.logging_config import audit_logger
+from app.voice import FasterWhisperSTT, latency_collector
 from app.voice.pipeline import VoiceSession
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Ciclo de vida de la aplicación: pre-calentamiento de modelos en memoria."""
+    audit_logger.info("Iniciando servidor y precargando modelo Whisper STT...")
+    try:
+        FasterWhisperSTT().get_model()
+    except Exception as e:
+        audit_logger.warning(f"No se pudo precargar Whisper STT: {e}")
+    yield
+
 
 app = FastAPI(
     title="Restaurant Voice Agent",
     description="Backend FastAPI para atención conversacional y reservas con IA",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 
@@ -62,6 +77,25 @@ async def voice_websocket_endpoint(websocket: WebSocket) -> None:
     session_id = str(uuid.uuid4())
     session = VoiceSession(websocket=websocket, session_id=session_id)
     await session.run()
+
+
+@app.get("/metrics/latency", tags=["Métricas"])
+def get_latency_metrics() -> dict[str, Any]:
+    """Retorna las métricas de latencia acumuladas con percentiles p50, p90 y p95 por etapa."""
+    return latency_collector.get_summary()
+
+
+@app.get("/metrics/latency/table", response_class=PlainTextResponse, tags=["Métricas"])
+def get_latency_markdown_table() -> PlainTextResponse:
+    """Retorna las métricas de latencia en formato de tabla Markdown."""
+    return PlainTextResponse(latency_collector.format_markdown_table())
+
+
+@app.post("/metrics/latency/reset", tags=["Métricas"])
+def reset_latency_metrics() -> dict[str, str]:
+    """Reinicia las métricas de latencia registradas."""
+    latency_collector.clear()
+    return {"status": "cleared"}
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Salud"])
