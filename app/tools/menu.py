@@ -6,8 +6,8 @@ from app.tools.models import ConsultarAlergenosInput, ConsultarAlergenosOutput
 
 
 def _normalize_text(text: str) -> str:
-    """Normaliza texto eliminando acentos, caracteres especiales y mayúsculas."""
-    text = text.lower().strip()
+    """Normaliza texto eliminando acentos, caracteres especiales y guiones bajos."""
+    text = text.lower().strip().replace("_", " ")
     return "".join(
         c for c in unicodedata.normalize("NFD", text)
         if unicodedata.category(c) != "Mn"

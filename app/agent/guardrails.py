@@ -69,10 +69,11 @@ def is_unintelligible(text: str) -> bool:
     if re.search(r"[b-df-hj-np-tv-z]{5,}", cleaned.lower()):
         return True
 
-    # Palabra única larga sin vocales
+    # Palabra alfabética larga sin vocales
     words = cleaned.split()
     for w in words:
-        if len(w) > 5 and not re.search(r"[aeiouáéíóúüAEIOUÁÉÍÓÚÜ]", w):
+        clean_w = re.sub(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑ]", "", w)
+        if len(clean_w) > 5 and not re.search(r"[aeiouáéíóúüAEIOUÁÉÍÓÚÜ]", clean_w):
             return True
 
     return False
