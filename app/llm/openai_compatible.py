@@ -4,6 +4,7 @@ import httpx
 
 from app.config import settings
 from app.llm.base import BaseLLM, LLMResponse, ToolExecution
+from app.logging_config import audit_logger
 
 
 class OpenAICompatibleProvider(BaseLLM):
@@ -36,7 +37,10 @@ class OpenAICompatibleProvider(BaseLLM):
 
         messages = [{"role": "system", "content": system_instruction}]
         for turn in conversation_history:
-            messages.append({"role": turn["role"], "content": turn["content"]})
+            role = turn.get("role", "user")
+            # En APIs compatibles con OpenAI (Groq, OpenRouter) el rol del modelo debe ser 'assistant'
+            api_role = "assistant" if role in ("model", "assistant") else role
+            messages.append({"role": api_role, "content": turn.get("content", "")})
         messages.append({"role": "user", "content": message})
 
         tool_defs = []
@@ -59,7 +63,10 @@ class OpenAICompatibleProvider(BaseLLM):
             payload: dict[str, Any] = {
                 "model": self.model,
                 "messages": current_messages,
-                "temperature": 0.2,
+                "temperature": 0.3,
+                "max_tokens": 250,
+                "presence_penalty": 0.5,
+                "frequency_penalty": 0.5,
             }
             if tool_defs:
                 payload["tools"] = tool_defs
@@ -71,6 +78,10 @@ class OpenAICompatibleProvider(BaseLLM):
                     headers=headers,
                     json=payload,
                 )
+                if resp.status_code >= 400:
+                    audit_logger.error(
+                        f"Error respuesta HTTP {resp.status_code} desde {self.base_url}: {resp.text}"
+                    )
                 resp.raise_for_status()
                 data = resp.json()
 
@@ -98,11 +109,16 @@ class OpenAICompatibleProvider(BaseLLM):
                     ToolExecution(name=fn_name, args=args, output=output)
                 )
 
+                if hasattr(output, "model_dump"):
+                    output_data = output.model_dump()
+                else:
+                    output_data = output
+
                 current_messages.append({
                     "role": "tool",
                     "tool_call_id": tc["id"],
                     "name": fn_name,
-                    "content": json.dumps(output, ensure_ascii=False),
+                    "content": json.dumps(output_data, ensure_ascii=False, default=str),
                 })
 
         return LLMResponse(

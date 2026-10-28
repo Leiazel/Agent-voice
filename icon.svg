@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1e2f"/>
+      <stop offset="100%" stop-color="#0f0f18"/>
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#fb923c"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  
+  <!-- Subtle border -->
+  <rect width="504" height="504" x="4" y="4" rx="124" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4"/>
+
+  <!-- Glowing Soundwaves (Left) -->
+  <path d="M 120 200 Q 110 256 120 312" fill="none" stroke="url(#primaryGrad)" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 85 160 Q 65 256 85 352" fill="none" stroke="url(#primaryGrad)" stroke-width="10" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- Glowing Soundwaves (Right) -->
+  <path d="M 392 200 Q 402 256 392 312" fill="none" stroke="url(#primaryGrad)" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 427 160 Q 447 256 427 352" fill="none" stroke="url(#primaryGrad)" stroke-width="10" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- Restaurant Cloche / Ambient Accent -->
+  <path d="M 196 100 Q 256 80 316 100" fill="none" stroke="url(#accentGrad)" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="256" cy="80" r="10" fill="#fb923c"/>
+
+  <!-- Microphone Capsule (Body) -->
+  <rect x="206" y="130" width="100" height="170" rx="50" fill="url(#primaryGrad)" filter="url(#glow)"/>
+  
+  <!-- Microphone Grille Mesh Line -->
+  <line x1="216" y1="200" x2="296" y2="200" stroke="rgba(255,255,255,0.4)" stroke-width="6" stroke-linecap="round"/>
+  <line x1="226" y1="230" x2="286" y2="230" stroke="rgba(255,255,255,0.4)" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Microphone Cradle (Arc) -->
+  <path d="M 166 230 C 166 330, 346 330, 346 230" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round"/>
+
+  <!-- Stand Base -->
+  <line x1="256" y1="330" x2="256" y2="400" stroke="#ffffff" stroke-width="18" stroke-linecap="round"/>
+  <line x1="186" y1="400" x2="326" y2="400" stroke="url(#primaryGrad)" stroke-width="20" stroke-linecap="round"/>
+
+  <!-- Little culinary spark (fork/star) -->
+  <circle cx="360" cy="140" r="12" fill="#f43f5e"/>
+</svg>
+

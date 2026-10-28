@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator, Optional
 from fastapi import FastAPI, HTTPException, WebSocket
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from pydantic import BaseModel, Field
 
 from app.agent.session import session_manager
@@ -71,6 +71,15 @@ def index() -> HTMLResponse:
     return HTMLResponse(template_path.read_text(encoding="utf-8"))
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon() -> Response:
+    """Retorna el favicon oficial para evitar errores 404 en la consola."""
+    icon_path = Path(__file__).resolve().parent.parent / "icon.svg"
+    if icon_path.exists():
+        return Response(content=icon_path.read_bytes(), media_type="image/svg+xml")
+    return Response(status_code=204)
+
+
 @app.websocket("/ws/voice")
 async def voice_websocket_endpoint(websocket: WebSocket) -> None:
     """Endpoint WebSocket para streaming de voz bidireccional y barge-in."""
@@ -101,9 +110,14 @@ def reset_latency_metrics() -> dict[str, str]:
 @app.get("/health", response_model=HealthResponse, tags=["Salud"])
 def health_check() -> HealthResponse:
     """Verifica el estado del servicio y la configuración activa del LLM."""
-    model_name = (
-        settings.gemini_model if settings.llm_provider == "gemini" else settings.ollama_model
-    )
+    if settings.llm_provider == "gemini":
+        model_name = settings.gemini_model
+    elif settings.llm_provider in ("openai", "groq", "openrouter"):
+        model_name = settings.openai_model
+    elif settings.llm_provider == "liquid":
+        model_name = settings.liquid_model
+    else:
+        model_name = settings.ollama_model
     return HealthResponse(
         status="ok",
         env=settings.app_env,

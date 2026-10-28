@@ -20,11 +20,13 @@ class FasterWhisperSTT:
 
     def get_model(self) -> WhisperModel:
         if FasterWhisperSTT._model is None:
-            # Si el modelo configurado es "base" pero la máquina es modesta, tiny o base corren muy rápido
+            import os
+            num_threads = min(4, os.cpu_count() or 4)
             FasterWhisperSTT._model = WhisperModel(
                 self.model_name,
                 device=self.device,
                 compute_type=self.compute_type,
+                cpu_threads=num_threads,
             )
         return FasterWhisperSTT._model
 
@@ -49,6 +51,7 @@ class FasterWhisperSTT:
             beam_size=1,
             temperature=0.0,
             vad_filter=True,
+            initial_prompt="Trattoria Bella Vista, reservas, comensales, horarios, alérgenos, lasaña, risotto, tiramisú, ensalada, mesa.",
         )
 
         transcript_parts = [segment.text.strip() for segment in segments]

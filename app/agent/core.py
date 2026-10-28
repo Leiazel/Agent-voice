@@ -8,6 +8,7 @@ from app.agent.guardrails import (
 from app.agent.prompts import SYSTEM_PROMPT
 from app.agent.tools_adapter import AGENT_TOOLS
 from app.llm import BaseLLM, ToolExecution, get_llm_provider
+from app.logging_config import audit_logger
 
 
 class VoiceReservationAgent:
@@ -99,7 +100,10 @@ class VoiceReservationAgent:
             )
             self.last_tool_executions = llm_resp.tool_executions
             texto_salida = llm_resp.text
-        except Exception:
+        except Exception as e:
+            audit_logger.exception(
+                f"Error durante inferencia LLM con {type(self.llm).__name__}: {e}"
+            )
             texto_salida = (
                 "Disculpa, tuve un inconveniente técnico temporal al procesar tu solicitud. "
                 "Por favor repite tu consulta o comunícate directamente con nuestro restaurante."
@@ -114,4 +118,4 @@ class VoiceReservationAgent:
 
     def _guardar_historial(self, user_msg: str, model_msg: str) -> None:
         self.conversation_history.append({"role": "user", "content": user_msg})
-        self.conversation_history.append({"role": "model", "content": model_msg})
+        self.conversation_history.append({"role": "assistant", "content": model_msg})

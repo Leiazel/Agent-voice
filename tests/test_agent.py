@@ -121,3 +121,36 @@ def test_gemini_provider_live_call() -> None:
     assert resp.text
     assert "Trattoria" in resp.text
 
+
+def test_openai_compatible_normalizes_roles(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.llm.openai_compatible import OpenAICompatibleProvider
+
+    captured_payloads = []
+
+    def mock_post(url, headers, json):
+        captured_payloads.append(json)
+        class MockResp:
+            status_code = 200
+            def raise_for_status(self): pass
+            def json(self):
+                return {
+                    "choices": [{"message": {"role": "assistant", "content": "¡Hola! ¿En qué puedo ayudarte?"}}]
+                }
+        return MockResp()
+
+    monkeypatch.setattr("httpx.Client.post", lambda self, url, **kwargs: mock_post(url, kwargs.get("headers"), kwargs.get("json")))
+
+    provider = OpenAICompatibleProvider(api_key="fake-key", base_url="https://api.fake.com")
+    history = [
+        {"role": "user", "content": "Hola"},
+        {"role": "model", "content": "Buenas tardes"},
+        {"role": "assistant", "content": "¿En qué ayudo?"},
+    ]
+    resp = provider.send_message("Quiero una mesa", history, "Instruccion de sistema")
+    assert resp.text == "¡Hola! ¿En qué puedo ayudarte?"
+    messages = captured_payloads[0]["messages"]
+    roles = [m["role"] for m in messages]
+    assert "model" not in roles
+    assert roles == ["system", "user", "assistant", "assistant", "user"]
+
+

@@ -21,8 +21,21 @@ class LocalTTSService:
             return self._piper_voice
 
         self._tried_loading = True
-        model_file = Path(self.voice_model_path)
-        if model_file.exists() and model_file.suffix == ".onnx":
+        candidates = [
+            Path(self.voice_model_path),
+            Path(f"{self.voice_model_path}.onnx"),
+            Path("models") / f"{self.voice_model_path}.onnx",
+            Path("models") / self.voice_model_path,
+            Path("data/models") / f"{self.voice_model_path}.onnx",
+            Path("data/models") / self.voice_model_path,
+        ]
+        model_file = None
+        for cand in candidates:
+            if cand.exists() and cand.is_file() and cand.suffix == ".onnx":
+                model_file = cand
+                break
+
+        if model_file is not None:
             try:
                 import piper
                 self._piper_voice = piper.PiperVoice.load(str(model_file))

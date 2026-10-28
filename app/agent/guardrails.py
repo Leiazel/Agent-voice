@@ -101,6 +101,9 @@ def sanitize_for_speech(text: str) -> str:
     # Quitar backticks de código (`codigo`)
     cleaned = re.sub(r"`([^`]+)`", r"\1", cleaned)
 
+    # Eliminar repeticiones degenerativas de palabras consecutivas (ej: "lasaña, lasaña, lasaña")
+    cleaned = re.sub(r"\b([a-zA-ZáéíóúÁÉÍÓÚñÑ]+)(?:[,\s]+\1\b){2,}", r"\1", cleaned, flags=re.IGNORECASE)
+
     # Reducir saltos de línea repetidos a un solo espacio o punto y aparte
     cleaned = re.sub(r"\n+", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()

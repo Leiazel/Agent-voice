@@ -201,7 +201,15 @@
     }
 
     async function startAudioCapture() {
-      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1 } });
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: 16000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
       audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
       const source = audioContext.createMediaStreamSource(mediaStream);
 
@@ -272,6 +280,9 @@
       for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
 
       const ctx = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
       ctx.decodeAudioData(bytes.buffer, (buffer) => {
         const source = ctx.createBufferSource();
         source.buffer = buffer;
@@ -284,22 +295,29 @@
           }
         };
         source.start(0);
+      }, (err) => {
+        console.error("Error decodificando audio:", err);
       });
     }
 
     function speakNative(text) {
-      stopPlayback();
-      updateStatus('speaking');
       if (!('speechSynthesis' in window)) return;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'es-ES';
-      utterance.rate = 1.05;
-      utterance.onend = () => {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'bot_playback_finished' }));
-        }
-      };
-      window.speechSynthesis.speak(utterance);
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        updateStatus('speaking');
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'es-ES';
+        utterance.rate = 1.05;
+        utterance.onend = () => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'bot_playback_finished' }));
+          }
+        };
+        utterance.onerror = (e) => {
+          console.warn('Error en síntesis nativa:', e);
+        };
+        window.speechSynthesis.speak(utterance);
+      }, 50);
     }
 
     function sendTextMessage() {

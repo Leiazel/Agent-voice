@@ -61,3 +61,12 @@ Thumbs.db
 *.log
 logs/
 tmp/
+
+# Local scripts and desktop launchers
+*.desktop
+iniciar.sh
+
+# Heavy binary models (Piper TTS, ONNX, etc.)
+models/
+*.onnx
+*.onnx.json

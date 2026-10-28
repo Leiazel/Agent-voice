@@ -48,6 +48,12 @@ class VoiceSession:
             while True:
                 message = await self.websocket.receive()
                 
+                # Desconexión limpia del cliente ASGI
+                msg_type = message.get("type")
+                if msg_type == "websocket.disconnect":
+                    audit_logger.info(f"Cliente de voz desconectado limpiamente [{self.session_id}]")
+                    break
+
                 # Tráfico de audio binario (PCM 16kHz mono)
                 if "bytes" in message and message["bytes"]:
                     await self._handle_audio_chunk(message["bytes"])
@@ -210,6 +216,15 @@ class VoiceSession:
                     await self._send_json({"type": "status", "state": "thinking"})
                     await self._send_json({"type": "transcript", "role": "user", "text": user_text})
                     reply = self.agent.process_user_message(user_text)
+
+                    # Notificar herramientas ejecutadas
+                    for te in self.agent.last_tool_executions:
+                        await self._send_json({
+                            "type": "tool_executed",
+                            "name": te.name,
+                            "args": te.args,
+                        })
+
                     await self._send_json({"type": "transcript", "role": "assistant", "text": reply})
                     await self._synthesize_and_stream(reply)
 

@@ -30,7 +30,12 @@ class Settings(BaseSettings):
     ollama_model: str = Field(default="qwen2.5:7b", alias="OLLAMA_MODEL")
     openai_base_url: str = Field(default="https://api.groq.com/openai/v1", alias="OPENAI_BASE_URL")
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
-    openai_model: str = Field(default="llama-3.3-70b-versatile", alias="OPENAI_MODEL")
+    openai_model: str = Field(default="openai/gpt-oss-20b", alias="OPENAI_MODEL")
+
+    # Liquid AI (Modelos de decisión d1, d1.1, d1-ultra)
+    liquid_api_key: str = Field(default="", alias="LIQUID_API_KEY")
+    liquid_base_url: str = Field(default="https://api.liquid.ai", alias="LIQUID_BASE_URL")
+    liquid_model: str = Field(default="d1.1", alias="LIQUID_MODEL")
 
     # Pipeline de voz
     vad_provider: str = Field(default="silero", alias="VAD_PROVIDER")
